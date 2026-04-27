@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+import { Grayscale } from 'react-native-color-matrix-image-filters';
 import { ExtractedFrame } from '@/types';
 import { formatTime } from '@/utils/timeFormat';
 import { requestMediaLibraryPermission } from '@/utils/permissions';
@@ -20,6 +21,7 @@ interface FrameGridProps {
   frames: ExtractedFrame[];
   onRemoveFrame: (id: string) => void;
   onLongPressFrame?: (frame: ExtractedFrame) => void;
+  onPressFrame?: (frame: ExtractedFrame, index: number) => void;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -29,14 +31,14 @@ const CELL_SIZE = (SCREEN_WIDTH - 48) / GRID_COLS;
 const getFilterOverlay = (filter?: string) => {
   switch (filter) {
     case 'Vivid': return { backgroundColor: 'rgba(255, 100, 100, 0.1)' };
-    case 'Black & White': return { backgroundColor: 'rgba(255, 255, 255, 0.4)' }; // Grayscale is hard to fake without a library, but let's just make it visually distinct for the demo
+    case 'Black & White': return null; // Handled directly on the Image component via style
     case 'Warm': return { backgroundColor: 'rgba(255, 150, 0, 0.2)' };
     case 'Cool': return { backgroundColor: 'rgba(0, 150, 255, 0.2)' };
     default: return null;
   }
 };
 
-export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame }: FrameGridProps) {
+export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame, onPressFrame }: FrameGridProps) {
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const handleSave = async (frame: ExtractedFrame) => {
@@ -92,20 +94,31 @@ export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame }: FrameGrid
       scrollEnabled={false}
       contentContainerStyle={styles.gridContent}
       columnWrapperStyle={styles.columnWrapper}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
         <TouchableOpacity 
           style={styles.cell} 
           activeOpacity={0.8}
+          onPress={() => onPressFrame?.(item, index)}
           onLongPress={() => onLongPressFrame?.(item)}
           delayLongPress={300}
         >
           <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: item.uri }}
-              style={styles.cellImage}
-              resizeMode="cover"
-            />
-            {item.filter && item.filter !== 'Original' && (
+            {item.filter === 'Black & White' ? (
+              <Grayscale style={styles.cellImage}>
+                <Image
+                  source={{ uri: item.uri }}
+                  style={styles.cellImage}
+                  resizeMode="cover"
+                />
+              </Grayscale>
+            ) : (
+              <Image
+                source={{ uri: item.uri }}
+                style={styles.cellImage}
+                resizeMode="cover"
+              />
+            )}
+            {item.filter && item.filter !== 'Original' && item.filter !== 'Black & White' && (
                <View style={[StyleSheet.absoluteFill, getFilterOverlay(item.filter)]} pointerEvents="none" />
             )}
           </View>

@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,11 +18,23 @@ import {
   requestImagePickerPermission,
   requestCameraPermission,
 } from '@/utils/permissions';
+import { useFrames } from '@/context/FramesContext';
+import { FrameGrid } from '@/components/FrameGrid';
+import { FullScreenViewer } from '@/components/FullScreenViewer';
+import { FilterModal } from '@/components/FilterModal';
+import { ExtractedFrame, FilterType } from '@/types';
 
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { extractedFrames, removeFrame, clearFrames, updateFrameFilter } = useFrames();
+
+  // Viewer state
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [currentViewerIndex, setCurrentViewerIndex] = useState(0);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedFrameForFilter, setSelectedFrameForFilter] = useState<ExtractedFrame | null>(null);
 
   // Animated pulse for the main CTA button
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
@@ -113,6 +126,23 @@ export default function HomeScreen() {
   const textPrimary = isDark ? '#F9FAFB' : '#111827';
   const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
+  const handlePressFrame = useCallback((frame: ExtractedFrame, index: number) => {
+    setCurrentViewerIndex(index);
+    setViewerVisible(true);
+  }, []);
+
+  const handleLongPressFrame = useCallback((frame: ExtractedFrame) => {
+    setSelectedFrameForFilter(frame);
+    setFilterModalVisible(true);
+  }, []);
+
+  const applyFilter = useCallback((filter: FilterType) => {
+    if (!selectedFrameForFilter) return;
+    updateFrameFilter(selectedFrameForFilter.id, filter);
+    setFilterModalVisible(false);
+    setSelectedFrameForFilter(null);
+  }, [selectedFrameForFilter, updateFrameFilter]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }]}>
       {/* Header */}
@@ -132,8 +162,9 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Body */}
-      <View style={styles.body}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Body */}
+        <View style={styles.body}>
         {/* Hero card */}
         <View style={[styles.heroCard, { backgroundColor: cardBg }]}>
           {/* Decorative gradient blob */}
@@ -149,6 +180,22 @@ export default function HomeScreen() {
           <Text style={[styles.heroSubtitle, { color: textSecondary }]}>
             Pick a video from your library, scrub to the perfect moment, and save stunning still frames.
           </Text>
+
+          {/* Feature highlights */}
+          <View style={styles.featuresList}>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📸</Text>
+              <Text style={[styles.featureText, { color: textPrimary }]}>Multiple formats: JPEG, PNG, HEIF</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🖼️</Text>
+              <Text style={[styles.featureText, { color: textPrimary }]}>Save directly to Gallery</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📤</Text>
+              <Text style={[styles.featureText, { color: textPrimary }]}>Share instantly</Text>
+            </View>
+          </View>
 
           {/* Primary CTA */}
           <Animated.View style={{ transform: [{ scale: pulseAnim }], width: '100%' }}>
@@ -182,20 +229,49 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Feature tags */}
-        <View style={styles.tagsRow}>
-          {['JPEG · PNG · HEIF', 'Save to Gallery', 'Share Instantly'].map((tag) => (
-            <View
-              key={tag}
-              style={[styles.tag, { backgroundColor: isDark ? '#1C1C24' : '#EDE9FE' }]}
-            >
-              <Text style={[styles.tagText, { color: isDark ? '#A78BFA' : '#6D28D9' }]}>
-                {tag}
+        {/* Extracted Frames Section */}
+        {extractedFrames.length > 0 && (
+          <View style={styles.framesSection}>
+            <View style={styles.framesSectionHeader}>
+              <Text style={[styles.framesSectionTitle, { color: textPrimary }]}>
+                Extracted Frames
               </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert('Clear All', 'Remove all extracted frames?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Clear', style: 'destructive', onPress: clearFrames },
+                  ]);
+                }}
+              >
+                <Text style={[styles.clearAllText, { color: '#EF4444' }]}>Clear All</Text>
+              </TouchableOpacity>
             </View>
-          ))}
+            <FrameGrid 
+              frames={extractedFrames} 
+              onRemoveFrame={removeFrame} 
+              onLongPressFrame={handleLongPressFrame} 
+              onPressFrame={handlePressFrame}
+            />
+          </View>
+        )}
         </View>
-      </View>
+      </ScrollView>
+
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        selectedFilter={selectedFrameForFilter?.filter}
+        onApplyFilter={applyFilter}
+        isDark={isDark}
+      />
+
+      <FullScreenViewer 
+        visible={viewerVisible} 
+        frames={extractedFrames} 
+        initialIndex={currentViewerIndex} 
+        onClose={() => setViewerVisible(false)} 
+      />
     </SafeAreaView>
   );
 }
@@ -203,6 +279,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
@@ -251,6 +330,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 4,
     gap: 14,
+    marginBottom: 20,
   },
   blobContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -290,6 +370,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 4,
+  },
+  featuresList: {
+    width: '100%',
+    marginVertical: 4,
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  featureIcon: {
+    fontSize: 16,
+  },
+  featureText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   primaryBtn: {
     flexDirection: 'row',
@@ -345,19 +443,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  tagsRow: {
+  framesSection: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+  },
+  framesSectionHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
   },
-  tag: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+  framesSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
-  tagText: {
-    fontSize: 12,
+  clearAllText: {
+    fontSize: 14,
     fontWeight: '600',
   },
 });

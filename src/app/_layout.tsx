@@ -4,6 +4,7 @@ import React from 'react';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from '@/context/SettingsContext';
+import { FramesProvider } from '@/context/FramesContext';
 import '../global.css';
 
 export default function RootLayout() {
@@ -14,34 +15,36 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <SettingsProvider>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
-          <Stack.Screen
-            name="(tabs)"
-            options={{ headerShown: false, animation: 'fade' }}
-          />
-          <Stack.Screen
-            name="video-player"
-            options={{
+        <FramesProvider>
+          <Stack
+            screenOptions={{
               headerShown: false,
-              animation: 'slide_from_bottom',
+              animation: 'slide_from_right',
             }}
-          />
-          <Stack.Screen
-            name="settings-modal"
-            options={{
-              headerShown: false,
-              presentation: 'modal',
-              animation: 'slide_from_bottom',
-            }}
-          />
-        </Stack>
+          >
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen
+              name="(tabs)"
+              options={{ headerShown: false, animation: 'fade' }}
+            />
+            <Stack.Screen
+              name="video-player"
+              options={{
+                headerShown: false,
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="settings-modal"
+              options={{
+                headerShown: false,
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+          </Stack>
+        </FramesProvider>
       </SettingsProvider>
     </SafeAreaProvider>
   );
