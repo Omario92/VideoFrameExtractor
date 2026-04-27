@@ -15,7 +15,10 @@ import {
   Dimensions,
   Platform,
   useColorScheme,
+  Modal,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as MediaLibrary from 'expo-media-library';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer, VideoPlayerStatus } from 'expo-video';
@@ -30,11 +33,22 @@ import {
 } from '@/utils/frameExtractor';
 import { generateIntervalTimestamps } from '@/utils/timeFormat';
 import { formatTime } from '@/utils/timeFormat';
+import { requestMediaLibraryPermission } from '@/utils/permissions';
 import { useSettings } from '@/context/SettingsContext';
-import { ExtractedFrame } from '@/types';
+import { ExtractedFrame, FilterType } from '@/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const VIDEO_HEIGHT = Math.round((SCREEN_W * 9) / 16) + 40; // slightly taller than 16:9
+
+const getFilterOverlay = (filter?: string) => {
+  switch (filter) {
+    case 'Vivid': return { backgroundColor: 'rgba(255, 100, 100, 0.1)' };
+    case 'Black & White': return { backgroundColor: 'rgba(255, 255, 255, 0.4)' };
+    case 'Warm': return { backgroundColor: 'rgba(255, 150, 0, 0.2)' };
+    case 'Cool': return { backgroundColor: 'rgba(0, 150, 255, 0.2)' };
+    default: return null;
+  }
+};
 
 export default function VideoPlayerScreen() {
   const router = useRouter();
@@ -61,6 +75,9 @@ export default function VideoPlayerScreen() {
   const [intervalInput, setIntervalInput] = useState('1.0');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractProgress, setExtractProgress] = useState({ done: 0, total: 0 });
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedFrameForFilter, setSelectedFrameForFilter] = useState<ExtractedFrame | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // ─── Video player ─────────────────────────────────────────────
   const player = useVideoPlayer(videoUri, (p) => {
@@ -132,6 +149,46 @@ export default function VideoPlayerScreen() {
     },
     [player, filmstrip]
   );
+
+  const handleLongPressFrame = useCallback((frame: ExtractedFrame) => {
+    setSelectedFrameForFilter(frame);
+    setFilterModalVisible(true);
+  }, []);
+
+  const applyFilter = useCallback((filter: FilterType) => {
+    if (!selectedFrameForFilter) return;
+    setExtractedFrames(prev => prev.map(f => 
+      f.id === selectedFrameForFilter.id ? { ...f, filter } : f
+    ));
+    setFilterModalVisible(false);
+    setSelectedFrameForFilter(null);
+  }, [selectedFrameForFilter]);
+
+  const saveCurrentFrameToGallery = useCallback(async () => {
+    if (!videoUri) return;
+    setIsSaving(true);
+    try {
+      const { granted } = await requestMediaLibraryPermission();
+      if (!granted) {
+        Alert.alert('Permission Denied', 'Please allow access to your photo library in Settings to save frames.');
+        setIsSaving(false);
+        return;
+      }
+      const quality = settings.quality / 100;
+      const timeMs = Math.round(currentTime * 1000);
+      const frame = await extractFrameAtTime(videoUri, timeMs, quality);
+      if (frame) {
+        await MediaLibrary.saveToLibraryAsync(frame.uri);
+        Alert.alert('Success', 'Frame saved to gallery!');
+      } else {
+        Alert.alert('Error', 'Could not extract frame to save.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save frame.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [videoUri, currentTime, settings.quality]);
 
   // ─── Frame extraction ─────────────────────────────────────────
   const captureCurrentFrame = useCallback(async () => {
@@ -312,10 +369,11 @@ export default function VideoPlayerScreen() {
           {/* Share current frame */}
           <TouchableOpacity
             style={[styles.controlBtn, styles.shareControlBtn]}
-            onPress={captureCurrentFrame}
+            onPress={saveCurrentFrameToGallery}
             activeOpacity={0.75}
+            disabled={isSaving}
           >
-            <Text style={styles.shareControlIcon}>⬆️</Text>
+            <Ionicons name="download-outline" size={24} color="#7C3AED" />
           </TouchableOpacity>
         </View>
 
@@ -396,9 +454,44 @@ export default function VideoPlayerScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <FrameGrid frames={extractedFrames} onRemoveFrame={removeFrame} />
+          <FrameGrid frames={extractedFrames} onRemoveFrame={removeFrame} onLongPressFrame={handleLongPressFrame} />
         </View>
       </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: surfaceBg }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: textPrimary }]}>Apply Filter</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)} style={styles.modalCloseBtn} activeOpacity={0.7}>
+                <Ionicons name="close" size={24} color={textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
+              {(['Original', 'Vivid', 'Black & White', 'Warm', 'Cool'] as FilterType[]).map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[
+                    styles.filterOption,
+                    selectedFrameForFilter?.filter === f && { borderColor: '#7C3AED', borderWidth: 2 }
+                  ]}
+                  onPress={() => applyFilter(f)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.filterPreview, getFilterOverlay(f)]} />
+                  <Text style={[styles.filterText, { color: textPrimary }]}>{f}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -613,5 +706,57 @@ const styles = StyleSheet.create({
   clearAllText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+    paddingTop: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  filterList: {
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  filterOption: {
+    alignItems: 'center',
+    gap: 8,
+    padding: 4,
+    borderRadius: 12,
+  },
+  filterPreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E5E7EB',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

@@ -153,22 +153,7 @@ export default function SettingsModal() {
               />
             </View>
 
-            {/* FILTERS */}
-            <SectionHeader title="Filters" />
-            <View style={[styles.card, { backgroundColor: cardBg }]}>
-              <SettingsRow
-                label="Choose Filter"
-                value={settings.filter}
-                onPress={() => {
-                  const filters: FilterType[] = [
-                    'No Filter', 'Vivid', 'Matte', 'Noir', 'Warm',
-                  ];
-                  const currentIdx = filters.indexOf(settings.filter);
-                  const next = filters[(currentIdx + 1) % filters.length];
-                  updateSettings({ filter: next });
-                }}
-              />
-            </View>
+            {/* FILTERS (Removed) */}
 
             <View style={{ height: 40 }} />
           </>

@@ -2,7 +2,7 @@
 
 export type ImageFormat = 'JPEG' | 'PNG' | 'HEIF';
 export type TimeFormat = 'Seconds' | 'Frames';
-export type FilterType = 'No Filter' | 'Vivid' | 'Matte' | 'Noir' | 'Warm';
+export type FilterType = 'Original' | 'Vivid' | 'Black & White' | 'Warm' | 'Cool';
 export type SharingAction = 'Open share sheet' | 'Save only';
 
 export interface AppSettings {
@@ -20,6 +20,7 @@ export interface ExtractedFrame {
   timestamp: number; // seconds
   width?: number;
   height?: number;
+  filter?: FilterType;
 }
 
 export interface VideoInfo {

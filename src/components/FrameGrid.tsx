@@ -19,13 +19,24 @@ import { requestMediaLibraryPermission } from '@/utils/permissions';
 interface FrameGridProps {
   frames: ExtractedFrame[];
   onRemoveFrame: (id: string) => void;
+  onLongPressFrame?: (frame: ExtractedFrame) => void;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_COLS = 2;
 const CELL_SIZE = (SCREEN_WIDTH - 48) / GRID_COLS;
 
-export function FrameGrid({ frames, onRemoveFrame }: FrameGridProps) {
+const getFilterOverlay = (filter?: string) => {
+  switch (filter) {
+    case 'Vivid': return { backgroundColor: 'rgba(255, 100, 100, 0.1)' };
+    case 'Black & White': return { backgroundColor: 'rgba(255, 255, 255, 0.4)' }; // Grayscale is hard to fake without a library, but let's just make it visually distinct for the demo
+    case 'Warm': return { backgroundColor: 'rgba(255, 150, 0, 0.2)' };
+    case 'Cool': return { backgroundColor: 'rgba(0, 150, 255, 0.2)' };
+    default: return null;
+  }
+};
+
+export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame }: FrameGridProps) {
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const handleSave = async (frame: ExtractedFrame) => {
@@ -82,12 +93,22 @@ export function FrameGrid({ frames, onRemoveFrame }: FrameGridProps) {
       contentContainerStyle={styles.gridContent}
       columnWrapperStyle={styles.columnWrapper}
       renderItem={({ item }) => (
-        <View style={styles.cell}>
-          <Image
-            source={{ uri: item.uri }}
-            style={styles.cellImage}
-            resizeMode="cover"
-          />
+        <TouchableOpacity 
+          style={styles.cell} 
+          activeOpacity={0.8}
+          onLongPress={() => onLongPressFrame?.(item)}
+          delayLongPress={300}
+        >
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: item.uri }}
+              style={styles.cellImage}
+              resizeMode="cover"
+            />
+            {item.filter && item.filter !== 'Original' && (
+               <View style={[StyleSheet.absoluteFill, getFilterOverlay(item.filter)]} pointerEvents="none" />
+            )}
+          </View>
           {/* Timestamp badge */}
           <View style={styles.timestampBadge}>
             <Text style={styles.timestampText}>{formatTime(item.timestamp)}</Text>
@@ -124,7 +145,7 @@ export function FrameGrid({ frames, onRemoveFrame }: FrameGridProps) {
               <Text style={styles.removeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       )}
     />
   );
@@ -145,9 +166,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#1C1C24',
   },
-  cellImage: {
+  imageContainer: {
     width: '100%',
     height: CELL_SIZE * 0.65,
+    position: 'relative',
+  },
+  cellImage: {
+    width: '100%',
+    height: '100%',
   },
   timestampBadge: {
     position: 'absolute',
