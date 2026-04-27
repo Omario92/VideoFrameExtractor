@@ -1,23 +1,37 @@
 {
   "expo": {
-    "name": "VideoFrameExtractor",
+    "name": "Video Frame Extractor",
     "slug": "VideoFrameExtractor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "videoframeextractor",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow Video Frame Extractor to access your photo library to select videos and save extracted frames.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Video Frame Extractor to save extracted frames to your photo library.",
+        "NSCameraUsageDescription": "Allow Video Frame Extractor to record new videos.",
+        "NSMicrophoneUsageDescription": "Allow Video Frame Extractor to record audio with videos."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#6B21A8"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.videoframeextractor.app"
     },
     "web": {
       "output": "static",
@@ -25,10 +39,27 @@
     },
     "plugins": [
       "expo-router",
+      "expo-video",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Video Frame Extractor to access your photos to select videos.",
+          "cameraPermission": "Allow Video Frame Extractor to use the camera to record videos."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Video Frame Extractor to access your photos.",
+          "savePhotosPermission": "Allow Video Frame Extractor to save extracted frames.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#6B21A8",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
@@ -37,8 +68,7 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }
