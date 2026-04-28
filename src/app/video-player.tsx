@@ -13,17 +13,13 @@ import {
   Alert,
   StyleSheet,
   Dimensions,
-  Platform,
   useColorScheme,
-  Modal,
-  FlatList,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { VideoView, useVideoPlayer, VideoPlayerStatus } from 'expo-video';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { FilmStrip } from '@/components/FilmStrip';
 import { FrameGrid } from '@/components/FrameGrid';
 import { FullScreenViewer } from '@/components/FullScreenViewer';
@@ -37,8 +33,7 @@ import {
   generateFilmstrip,
   extractFramesAtTimestamps,
 } from '@/utils/frameExtractor';
-import { generateIntervalTimestamps } from '@/utils/timeFormat';
-import { formatTime } from '@/utils/timeFormat';
+import { generateIntervalTimestamps, formatTime } from '@/utils/timeFormat';
 import { requestMediaLibraryPermission } from '@/utils/permissions';
 import { useSettings } from '@/context/SettingsContext';
 import { useFrames } from '@/context/FramesContext';
@@ -47,15 +42,7 @@ import { ExtractedFrame, FilterType } from '@/types';
 const { width: SCREEN_W } = Dimensions.get('window');
 const VIDEO_HEIGHT = Math.round((SCREEN_W * 9) / 16) + 40; // slightly taller than 16:9
 
-const getFilterOverlay = (filter?: string) => {
-  switch (filter) {
-    case 'Vivid': return { backgroundColor: 'rgba(255, 100, 100, 0.1)' };
-    case 'Black & White': return null; // Applied directly on Image style
-    case 'Warm': return { backgroundColor: 'rgba(255, 150, 0, 0.2)' };
-    case 'Cool': return { backgroundColor: 'rgba(0, 150, 255, 0.2)' };
-    default: return null;
-  }
-};
+
 
 export default function VideoPlayerScreen() {
   const router = useRouter();
@@ -143,10 +130,6 @@ export default function VideoPlayerScreen() {
     (direction: 'back' | 'forward') => {
       if (!player) return;
       const step = 1 / 30; // one frame at 30fps
-      const newTime = Math.max(
-        0,
-        Math.min(durationSeconds, currentTime + (direction === 'forward' ? step : -step))
-      );
       player.seekBy(direction === 'forward' ? step : -step);
     },
     [player, currentTime, durationSeconds]
@@ -185,7 +168,6 @@ export default function VideoPlayerScreen() {
         setIsSaving(false);
         return;
       }
-      const quality = settings.quality / 100;
       const timeMs = Math.round(currentTime * 1000);
       const frame = await extractFrameAtTime(videoUri, timeMs, settings.imageFormat, settings.quality);
       if (frame) {
@@ -194,7 +176,7 @@ export default function VideoPlayerScreen() {
       } else {
         Alert.alert('Error', 'Could not extract frame to save.');
       }
-    } catch (e) {
+    } catch (_e) {
       Alert.alert('Error', 'Failed to save frame.');
     } finally {
       setIsSaving(false);
@@ -213,7 +195,6 @@ export default function VideoPlayerScreen() {
     setIsExtracting(true);
     setExtractProgress({ done: 0, total: 1 });
     try {
-      const quality = settings.quality / 100;
       const timeMs = Math.round(currentTime * 1000);
       const frame = await extractFrameAtTime(videoUri, timeMs, settings.imageFormat, settings.quality);
       if (frame) {
@@ -222,7 +203,7 @@ export default function VideoPlayerScreen() {
       } else {
         Alert.alert('Error', 'Could not extract frame at this position.');
       }
-    } catch (e) {
+    } catch (_e) {
       Alert.alert('Error', 'Frame extraction failed.');
     } finally {
       setIsExtracting(false);
@@ -234,7 +215,6 @@ export default function VideoPlayerScreen() {
     setIsExtracting(true);
     setExtractProgress({ done: 0, total: 2 });
     try {
-      const quality = settings.quality / 100;
       const frames = await extractFirstAndLastFrames(videoUri, durationSeconds, settings.imageFormat, settings.quality);
       setExtractProgress({ done: frames.length, total: 2 });
       if (frames.length > 0) {
@@ -274,7 +254,6 @@ export default function VideoPlayerScreen() {
     setIsExtracting(true);
     setExtractProgress({ done: 0, total: timestamps.length });
     try {
-      const quality = settings.quality / 100;
       const frames = await extractFramesAtTimestamps(
         videoUri,
         timestamps,
