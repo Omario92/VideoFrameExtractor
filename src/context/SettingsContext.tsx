@@ -15,7 +15,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   includeMetadata: true,
   sharingAction: 'Open share sheet',
   timeFormat: 'Seconds',
-  filter: 'No Filter',
+  filter: 'Original',
 };
 
 interface SettingsContextValue {

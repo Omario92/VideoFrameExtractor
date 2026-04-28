@@ -91,7 +91,7 @@ export default function SettingsModal() {
               <View style={styles.cardRow}>
                 <Text style={[styles.cardRowLabel, { color: textPrimary }]}>Format</Text>
                 <SegmentedControl<ImageFormat>
-                  options={['JPEG', 'PNG', 'HEIF']}
+                  options={['JPEG', 'PNG', 'WEBP', 'HEIF']}
                   selected={settings.imageFormat}
                   onSelect={(val) => updateSettings({ imageFormat: val })}
                 />

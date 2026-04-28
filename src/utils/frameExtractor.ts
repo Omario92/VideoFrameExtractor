@@ -1,29 +1,23 @@
-import * as VideoThumbnails from 'expo-video-thumbnails';
-import { ExtractedFrame } from '@/types';
+import { createVideoPlayer } from 'expo-video';
+import { ExtractedFrame, ImageFormat } from '@/types';
+import { processAndSaveThumbnail } from './ExportService';
 
 /**
  * Extract a single frame from a video at the given timestamp.
- * @param videoUri  Local URI of the video file
- * @param timeMs    Time in milliseconds
- * @param quality   JPEG quality 0–1 (default 0.9)
  */
 export async function extractFrameAtTime(
   videoUri: string,
   timeMs: number,
-  quality = 0.9
+  format: ImageFormat = 'JPEG',
+  quality = 95
 ): Promise<ExtractedFrame | null> {
   try {
-    const { uri, width, height } = await VideoThumbnails.getThumbnailAsync(videoUri, {
-      time: Math.max(0, timeMs),
-      quality,
-    });
-    return {
-      id: `frame_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      uri,
-      timestamp: timeMs / 1000,
-      width,
-      height,
-    };
+    const player = createVideoPlayer(videoUri);
+    const timeSec = Math.max(0, timeMs / 1000);
+    const thumbs = await player.generateThumbnailsAsync([timeSec]);
+    if (thumbs.length === 0) return null;
+    
+    return await processAndSaveThumbnail(thumbs[0], videoUri, format, quality, true);
   } catch (error) {
     console.warn('[frameExtractor] Failed to extract frame at', timeMs, error);
     return null;
@@ -32,23 +26,29 @@ export async function extractFrameAtTime(
 
 /**
  * Extract multiple frames at specific timestamps (in seconds).
- * Reports progress via onProgress callback.
  */
 export async function extractFramesAtTimestamps(
   videoUri: string,
   timestamps: number[], // in seconds
-  quality = 0.9,
+  format: ImageFormat = 'JPEG',
+  quality = 95,
   onProgress?: (done: number, total: number) => void
 ): Promise<ExtractedFrame[]> {
   const frames: ExtractedFrame[] = [];
 
-  for (let i = 0; i < timestamps.length; i++) {
-    const timeMs = Math.round(timestamps[i] * 1000);
-    const frame = await extractFrameAtTime(videoUri, timeMs, quality);
-    if (frame) {
-      frames.push(frame);
+  try {
+    const player = createVideoPlayer(videoUri);
+    const thumbs = await player.generateThumbnailsAsync(timestamps);
+    
+    for (let i = 0; i < thumbs.length; i++) {
+      const frame = await processAndSaveThumbnail(thumbs[i], videoUri, format, quality, true);
+      if (frame) {
+        frames.push(frame);
+      }
+      onProgress?.(i + 1, timestamps.length);
     }
-    onProgress?.(i + 1, timestamps.length);
+  } catch (error) {
+    console.warn('[frameExtractor] Failed to extract frames at timestamps', error);
   }
 
   return frames;
@@ -60,20 +60,14 @@ export async function extractFramesAtTimestamps(
 export async function extractFirstAndLastFrames(
   videoUri: string,
   durationSeconds: number,
-  quality = 0.9
+  format: ImageFormat = 'JPEG',
+  quality = 95
 ): Promise<ExtractedFrame[]> {
-  const results: ExtractedFrame[] = [];
-
-  const first = await extractFrameAtTime(videoUri, 0, quality);
-  if (first) results.push(first);
-
+  const timestamps = [0];
   if (durationSeconds > 0) {
-    const lastMs = Math.max(0, Math.round(durationSeconds * 1000) - 200);
-    const last = await extractFrameAtTime(videoUri, lastMs, quality);
-    if (last) results.push(last);
+    timestamps.push(Math.max(0, durationSeconds - 0.2));
   }
-
-  return results;
+  return extractFramesAtTimestamps(videoUri, timestamps, format, quality);
 }
 
 /**
@@ -83,12 +77,28 @@ export async function generateFilmstrip(
   videoUri: string,
   durationSeconds: number,
   count = 12,
-  quality = 0.5
+  quality = 50 // UI thumbnails can be lower quality
 ): Promise<ExtractedFrame[]> {
   if (durationSeconds <= 0) return [];
   const interval = durationSeconds / Math.max(1, count - 1);
   const timestamps = Array.from({ length: count }, (_, i) =>
     Math.min(i * interval, durationSeconds)
   );
-  return extractFramesAtTimestamps(videoUri, timestamps, quality);
+  
+  const frames: ExtractedFrame[] = [];
+  try {
+    const player = createVideoPlayer(videoUri);
+    const thumbs = await player.generateThumbnailsAsync(timestamps);
+    
+    // We use isPersistent=false for filmstrip
+    for (let i = 0; i < thumbs.length; i++) {
+      const frame = await processAndSaveThumbnail(thumbs[i], videoUri, 'JPEG', quality, false);
+      if (frame) {
+        frames.push(frame);
+      }
+    }
+  } catch (error) {
+    console.warn('[frameExtractor] Failed to generate filmstrip', error);
+  }
+  return frames;
 }

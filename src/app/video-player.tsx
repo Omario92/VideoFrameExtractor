@@ -28,6 +28,8 @@ import { FilmStrip } from '@/components/FilmStrip';
 import { FrameGrid } from '@/components/FrameGrid';
 import { FullScreenViewer } from '@/components/FullScreenViewer';
 import { FilterModal } from '@/components/FilterModal';
+import { FrameActionSheet } from '@/components/FrameActionSheet';
+import { MultiSelectBar } from '@/components/MultiSelectBar';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import {
   extractFrameAtTime,
@@ -81,7 +83,9 @@ export default function VideoPlayerScreen() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractProgress, setExtractProgress] = useState({ done: 0, total: 0 });
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedFrameForFilter, setSelectedFrameForFilter] = useState<ExtractedFrame | null>(null);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [selectedFrameForAction, setSelectedFrameForAction] = useState<ExtractedFrame | null>(null);
+  const { setIsMultiSelectMode, toggleSelection } = useFrames();
   const [isSaving, setIsSaving] = useState(false);
   
   // Viewer state
@@ -160,16 +164,16 @@ export default function VideoPlayerScreen() {
   );
 
   const handleLongPressFrame = useCallback((frame: ExtractedFrame) => {
-    setSelectedFrameForFilter(frame);
-    setFilterModalVisible(true);
+    setSelectedFrameForAction(frame);
+    setActionSheetVisible(true);
   }, []);
 
   const applyFilter = useCallback((filter: FilterType) => {
-    if (!selectedFrameForFilter) return;
-    updateFrameFilter(selectedFrameForFilter.id, filter);
+    if (!selectedFrameForAction) return;
+    updateFrameFilter(selectedFrameForAction.id, filter);
     setFilterModalVisible(false);
-    setSelectedFrameForFilter(null);
-  }, [selectedFrameForFilter, updateFrameFilter]);
+    setSelectedFrameForAction(null);
+  }, [selectedFrameForAction, updateFrameFilter]);
 
   const saveCurrentFrameToGallery = useCallback(async () => {
     if (!videoUri) return;
@@ -183,7 +187,7 @@ export default function VideoPlayerScreen() {
       }
       const quality = settings.quality / 100;
       const timeMs = Math.round(currentTime * 1000);
-      const frame = await extractFrameAtTime(videoUri, timeMs, quality);
+      const frame = await extractFrameAtTime(videoUri, timeMs, settings.imageFormat, settings.quality);
       if (frame) {
         await MediaLibrary.saveToLibraryAsync(frame.uri);
         Alert.alert('Success', 'Frame saved to gallery!');
@@ -211,7 +215,7 @@ export default function VideoPlayerScreen() {
     try {
       const quality = settings.quality / 100;
       const timeMs = Math.round(currentTime * 1000);
-      const frame = await extractFrameAtTime(videoUri, timeMs, quality);
+      const frame = await extractFrameAtTime(videoUri, timeMs, settings.imageFormat, settings.quality);
       if (frame) {
         addFrame(frame);
         setExtractProgress({ done: 1, total: 1 });
@@ -231,7 +235,7 @@ export default function VideoPlayerScreen() {
     setExtractProgress({ done: 0, total: 2 });
     try {
       const quality = settings.quality / 100;
-      const frames = await extractFirstAndLastFrames(videoUri, durationSeconds, quality);
+      const frames = await extractFirstAndLastFrames(videoUri, durationSeconds, settings.imageFormat, settings.quality);
       setExtractProgress({ done: frames.length, total: 2 });
       if (frames.length > 0) {
         frames.forEach(f => addFrame(f));
@@ -274,8 +278,9 @@ export default function VideoPlayerScreen() {
       const frames = await extractFramesAtTimestamps(
         videoUri,
         timestamps,
-        quality,
-        (done, total) => setExtractProgress({ done, total })
+        settings.imageFormat,
+        settings.quality,
+        (done: number, total: number) => setExtractProgress({ done, total })
       );
       if (frames.length > 0) {
         frames.forEach(f => addFrame(f));
@@ -301,6 +306,8 @@ export default function VideoPlayerScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }]} edges={['top']}>
+      <MultiSelectBar />
+
       <LoadingOverlay
         visible={isExtracting}
         message="Extracting frame…"
@@ -479,9 +486,21 @@ export default function VideoPlayerScreen() {
       <FilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
-        selectedFilter={selectedFrameForFilter?.filter}
+        selectedFilter={selectedFrameForAction?.filter}
         onApplyFilter={applyFilter}
         isDark={isDark}
+      />
+
+      <FrameActionSheet
+        visible={actionSheetVisible}
+        onClose={() => setActionSheetVisible(false)}
+        onApplyFilter={() => setFilterModalVisible(true)}
+        onSelectMultiple={() => {
+          setIsMultiSelectMode(true);
+          if (selectedFrameForAction) {
+            toggleSelection(selectedFrameForAction.id);
+          }
+        }}
       />
 
       <FullScreenViewer 

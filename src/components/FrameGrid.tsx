@@ -16,6 +16,7 @@ import { Grayscale } from 'react-native-color-matrix-image-filters';
 import { ExtractedFrame } from '@/types';
 import { formatTime } from '@/utils/timeFormat';
 import { requestMediaLibraryPermission } from '@/utils/permissions';
+import { useFrames } from '@/context/FramesContext';
 
 interface FrameGridProps {
   frames: ExtractedFrame[];
@@ -40,6 +41,15 @@ const getFilterOverlay = (filter?: string) => {
 
 export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame, onPressFrame }: FrameGridProps) {
   const [savingId, setSavingId] = useState<string | null>(null);
+  const { isMultiSelectMode, selectedFrameIds, toggleSelection } = useFrames();
+
+  const handlePress = (item: ExtractedFrame, index: number) => {
+    if (isMultiSelectMode) {
+      toggleSelection(item.id);
+    } else {
+      onPressFrame?.(item, index);
+    }
+  };
 
   const handleSave = async (frame: ExtractedFrame) => {
     setSavingId(frame.id);
@@ -98,8 +108,8 @@ export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame, onPressFram
         <TouchableOpacity 
           style={styles.cell} 
           activeOpacity={0.8}
-          onPress={() => onPressFrame?.(item, index)}
-          onLongPress={() => onLongPressFrame?.(item)}
+          onPress={() => handlePress(item, index)}
+          onLongPress={() => !isMultiSelectMode && onLongPressFrame?.(item)}
           delayLongPress={300}
         >
           <View style={styles.imageContainer}>
@@ -121,43 +131,53 @@ export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame, onPressFram
             {item.filter && item.filter !== 'Original' && item.filter !== 'Black & White' && (
                <View style={[StyleSheet.absoluteFill, getFilterOverlay(item.filter)]} pointerEvents="none" />
             )}
+            {/* Multi-select overlay */}
+            {isMultiSelectMode && (
+              <View style={styles.checkboxContainer}>
+                <View style={[styles.checkbox, selectedFrameIds.includes(item.id) && styles.checkboxSelected]}>
+                  {selectedFrameIds.includes(item.id) && <Text style={styles.checkmark}>✓</Text>}
+                </View>
+              </View>
+            )}
           </View>
           {/* Timestamp badge */}
           <View style={styles.timestampBadge}>
             <Text style={styles.timestampText}>{formatTime(item.timestamp)}</Text>
           </View>
 
-          {/* Action row */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={styles.shareBtn}
-              onPress={() => handleShare(item)}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.actionBtnText}>Share</Text>
-            </TouchableOpacity>
+          {/* Action row (hidden in multi-select) */}
+          {!isMultiSelectMode && (
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.shareBtn}
+                onPress={() => handleShare(item)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.actionBtnText}>Share</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.saveBtn}
-              onPress={() => handleSave(item)}
-              activeOpacity={0.75}
-              disabled={savingId === item.id}
-            >
-              {savingId === item.id ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.saveBtnText}>Save</Text>
-              )}
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={() => handleSave(item)}
+                activeOpacity={0.75}
+                disabled={savingId === item.id}
+              >
+                {savingId === item.id ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save</Text>
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.removeBtn}
-              onPress={() => onRemoveFrame(item.id)}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.removeBtnText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={styles.removeBtn}
+                onPress={() => onRemoveFrame(item.id)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.removeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </TouchableOpacity>
       )}
     />
@@ -264,5 +284,30 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 18,
+  },
+  checkboxContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 10,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

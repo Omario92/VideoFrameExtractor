@@ -1,56 +1,70 @@
-# Welcome to your Expo app 👋
+# 🎬 Video Frame Extractor
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A premium, fast, and intuitive React Native application for extracting high-quality still frames from any video. Built with Expo and modern native tools, it allows users to scrub videos down to the millisecond, apply filters, and securely save multiple formats directly to their device.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Features
 
+- **Precision Playback**: Navigate through videos frame-by-frame with a responsive scrubber and precise time tracking.
+- **Batch Extraction**: Extract frames by specific time intervals or automatically grab the very first and last frames.
+- **Dynamic Multi-Select**: Seamlessly select multiple frames to batch save, share, or delete in one go.
+- **Export Control**: Configure output format (`JPEG`, `PNG`, `WEBP`, `HEIF`) and compression quality (1-100%).
+- **Filters**: Quickly apply beautiful non-destructive overlays (Vivid, Warm, Cool, Black & White) to any extracted frame.
+- **Premium UI**: Crafted with smooth `reanimated` gestures, a native full-screen image viewer, and dynamic dark mode support.
+- **Persistent Storage**: Safely persists extracted frames locally using the file system so you never lose your work.
+
+---
+
+## 🛠 Tech Stack
+
+- **Framework**: [React Native](https://reactnative.dev/) & [Expo SDK 55](https://expo.dev/)
+- **Language**: TypeScript
+- **Video & Media**: `expo-video`, `expo-image-manipulator`, `expo-media-library`
+- **File System**: `expo-file-system` for persistent local frame caching
+- **Navigation**: `expo-router` for file-based routing
+- **Animations**: `react-native-reanimated` & `react-native-gesture-handler`
+
+---
+
+## 💻 Development
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm or yarn
+- Expo Go app on your physical device, or an Android/iOS emulator
+
+### Setup & Run
+1. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. Run the application:
    ```bash
-   npx expo start
+   npm run start   # Start the Expo bundler
+   npm run android # Build and run on Android emulator
+   npm run ios     # Build and run on iOS simulator
    ```
 
-In the output, you'll find options to open the app in a
+### Code Quality
+Use the built-in commands to ensure code consistency and type safety:
+- **Linting**: `npm run lint`
+- **Type Checking**: `npm run typecheck`
+- **Run All Checks**: `npm run check`
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🗺 Roadmap v0.2
+We have recently completed a major v0.2 architectural upgrade. Key milestones include:
+- [x] Migrate from deprecated `expo-video-thumbnails` to `expo-video` native thumbnail API.
+- [x] Introduce persistent file-system caching to prevent device storage bloat and URI leaks.
+- [x] Integrate `expo-image-manipulator` for powerful export formatting (`WEBP`, `HEIF`).
+- [x] Add dynamic Multi-Select mode with batch sharing, saving, and deletion capabilities.
+- [ ] Add advanced filter adjustments (brightness, contrast, saturation sliders).
+- [ ] Implement cloud backup for extracted frame sessions.
+- [ ] Expand localization and accessibility support.
 
-## Get a fresh project
+---
 
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+*Built with ❤️ for content creators, developers, and mobile enthusiasts.*

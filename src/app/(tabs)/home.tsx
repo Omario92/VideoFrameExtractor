@@ -22,6 +22,8 @@ import { useFrames } from '@/context/FramesContext';
 import { FrameGrid } from '@/components/FrameGrid';
 import { FullScreenViewer } from '@/components/FullScreenViewer';
 import { FilterModal } from '@/components/FilterModal';
+import { FrameActionSheet } from '@/components/FrameActionSheet';
+import { MultiSelectBar } from '@/components/MultiSelectBar';
 import { ExtractedFrame, FilterType } from '@/types';
 
 export default function HomeScreen() {
@@ -34,7 +36,9 @@ export default function HomeScreen() {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [currentViewerIndex, setCurrentViewerIndex] = useState(0);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedFrameForFilter, setSelectedFrameForFilter] = useState<ExtractedFrame | null>(null);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [selectedFrameForAction, setSelectedFrameForAction] = useState<ExtractedFrame | null>(null);
+  const { setIsMultiSelectMode, toggleSelection } = useFrames();
 
   // Animated pulse for the main CTA button
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
@@ -132,19 +136,21 @@ export default function HomeScreen() {
   }, []);
 
   const handleLongPressFrame = useCallback((frame: ExtractedFrame) => {
-    setSelectedFrameForFilter(frame);
-    setFilterModalVisible(true);
+    setSelectedFrameForAction(frame);
+    setActionSheetVisible(true);
   }, []);
 
   const applyFilter = useCallback((filter: FilterType) => {
-    if (!selectedFrameForFilter) return;
-    updateFrameFilter(selectedFrameForFilter.id, filter);
+    if (!selectedFrameForAction) return;
+    updateFrameFilter(selectedFrameForAction.id, filter);
     setFilterModalVisible(false);
-    setSelectedFrameForFilter(null);
-  }, [selectedFrameForFilter, updateFrameFilter]);
+    setSelectedFrameForAction(null);
+  }, [selectedFrameForAction, updateFrameFilter]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }]}>
+      <MultiSelectBar />
+      
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: isDark ? '#2D2D3A' : '#E5E7EB' }]}>
         <View style={styles.headerLeft}>
@@ -261,9 +267,21 @@ export default function HomeScreen() {
       <FilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
-        selectedFilter={selectedFrameForFilter?.filter}
+        selectedFilter={selectedFrameForAction?.filter}
         onApplyFilter={applyFilter}
         isDark={isDark}
+      />
+
+      <FrameActionSheet
+        visible={actionSheetVisible}
+        onClose={() => setActionSheetVisible(false)}
+        onApplyFilter={() => setFilterModalVisible(true)}
+        onSelectMultiple={() => {
+          setIsMultiSelectMode(true);
+          if (selectedFrameForAction) {
+            toggleSelection(selectedFrameForAction.id);
+          }
+        }}
       />
 
       <FullScreenViewer 
