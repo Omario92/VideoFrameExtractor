@@ -130,9 +130,14 @@ export default function VideoPlayerScreen() {
     (direction: 'back' | 'forward') => {
       if (!player) return;
       const step = 1 / 30; // one frame at 30fps
-      player.seekBy(direction === 'forward' ? step : -step);
+      const nextTime = Math.max(
+        0,
+        Math.min(durationSeconds, currentTime + (direction === 'forward' ? step : -step))
+      );
+      player.currentTime = nextTime;
+      setCurrentTime(nextTime);
     },
-    [player]
+    [player, currentTime, durationSeconds]
   );
 
   const handleFilmstripSelect = useCallback(

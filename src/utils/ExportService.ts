@@ -24,7 +24,7 @@ export async function processAndSaveThumbnail(
     const targetDir = isPersistent ? EXTRACTED_DIR : (FileSystem.cacheDirectory || 'file:///cache/') + 'filmstrip_';
     let saveFormat = SaveFormat.JPEG;
     let ext = 'jpg';
-    let outputFormat: 'jpeg' | 'png' | 'webp' | 'heif' = 'jpeg';
+    let outputFormat: 'jpeg' | 'png' | 'webp' = 'jpeg';
     
     if (format === 'PNG') {
       saveFormat = SaveFormat.PNG;
@@ -34,15 +34,9 @@ export async function processAndSaveThumbnail(
       saveFormat = SaveFormat.WEBP;
       ext = 'webp';
       outputFormat = 'webp';
-    } else if (format === 'HEIF') {
-       // expo-image-manipulator doesn't support HEIF natively for saving. 
-       // We fallback to JPEG manipulation but mark the struct as HEIF if the user requested it.
-       saveFormat = SaveFormat.JPEG;
-       ext = 'heic'; // use heic extension, some platforms might auto-convert or just treat as jpeg
-       outputFormat = 'heif';
     }
 
-    const manipContext = ImageManipulator.manipulate(thumbnail as any);
+    const manipContext = ImageManipulator.manipulate(thumbnail);
     const imageRef = await manipContext.renderAsync();
     const manipResult = await imageRef.saveAsync({ compress: quality / 100, format: saveFormat });
 

@@ -1,6 +1,6 @@
 // Types for Video Frame Extractor app
 
-export type ImageFormat = 'JPEG' | 'PNG' | 'WEBP' | 'HEIF';
+export type ImageFormat = 'JPEG' | 'PNG' | 'WEBP';
 export type TimeFormat = 'Seconds' | 'Frames';
 export type FilterType = 'Original' | 'Vivid' | 'Black & White' | 'Warm' | 'Cool';
 export type SharingAction = 'Open share sheet' | 'Save only';
