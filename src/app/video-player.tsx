@@ -181,7 +181,7 @@ export default function VideoPlayerScreen() {
     } finally {
       setIsSaving(false);
     }
-  }, [videoUri, currentTime, settings.quality]);
+  }, [videoUri, currentTime, settings.quality, settings.imageFormat]);
 
   // Viewer Handlers
   const handlePressFrame = useCallback((frame: ExtractedFrame, index: number) => {
@@ -208,7 +208,7 @@ export default function VideoPlayerScreen() {
     } finally {
       setIsExtracting(false);
     }
-  }, [videoUri, currentTime, settings.quality]);
+  }, [videoUri, currentTime, settings.quality, settings.imageFormat, addFrame]);
 
   const captureFirstAndLast = useCallback(async () => {
     if (!videoUri) return;
@@ -227,7 +227,7 @@ export default function VideoPlayerScreen() {
     } finally {
       setIsExtracting(false);
     }
-  }, [videoUri, durationSeconds, settings.quality]);
+  }, [videoUri, durationSeconds, settings.quality, settings.imageFormat, addFrame]);
 
   const extractByInterval = useCallback(async () => {
     if (!videoUri) return;
@@ -269,7 +269,7 @@ export default function VideoPlayerScreen() {
     } finally {
       setIsExtracting(false);
     }
-  }, [videoUri, durationSeconds, intervalInput, settings.quality]);
+  }, [videoUri, durationSeconds, intervalInput, settings.quality, settings.imageFormat, addFrame]);
 
   const handleRemoveFrame = useCallback((id: string) => {
     removeFrame(id);
