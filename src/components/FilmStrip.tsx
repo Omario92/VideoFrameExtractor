@@ -7,7 +7,6 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { ExtractedFrame } from '@/types';
 import { formatTime } from '@/utils/timeFormat';

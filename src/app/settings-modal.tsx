@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Platform,
   useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +17,7 @@ import {
   SegmentedControl,
   QualityStepper,
 } from '@/components/SettingsComponents';
-import { ImageFormat, FilterType, TimeFormat, SharingAction } from '@/types';
+import { ImageFormat, TimeFormat, SharingAction } from '@/types';
 
 type ModalTab = 'Settings' | 'Metadata';
 

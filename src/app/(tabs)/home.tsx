@@ -8,7 +8,6 @@ import {
   useColorScheme,
   Animated,
   Easing,
-  Platform,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

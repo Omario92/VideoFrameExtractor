@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,7 +15,7 @@ import {
   requestMediaLibraryPermission,
 } from '@/utils/permissions';
 
-const { width } = Dimensions.get('window');
+
 
 interface Step {
   icon: string;
