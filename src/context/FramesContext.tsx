@@ -127,7 +127,7 @@ export function FramesProvider({ children }: { children: ReactNode }) {
       Alert.alert('Saved!', `Successfully saved ${framesToSave.length} frames.`);
       setIsMultiSelectMode(false);
       clearSelection();
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Could not save some frames. Please try again.');
     }
   }, [extractedFrames, selectedFrameIds, clearSelection]);
@@ -150,7 +150,7 @@ export function FramesProvider({ children }: { children: ReactNode }) {
       }
       setIsMultiSelectMode(false);
       clearSelection();
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Could not share frames.');
     }
   }, [extractedFrames, selectedFrameIds, clearSelection]);

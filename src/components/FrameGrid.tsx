@@ -61,7 +61,7 @@ export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame, onPressFram
       }
       await MediaLibrary.saveToLibraryAsync(frame.uri);
       Alert.alert('Saved!', 'Frame saved to your gallery.');
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Could not save frame. Please try again.');
     } finally {
       setSavingId(null);
@@ -79,7 +79,7 @@ export function FrameGrid({ frames, onRemoveFrame, onLongPressFrame, onPressFram
       } else {
         Alert.alert('Sharing unavailable', 'Sharing is not available on this device.');
       }
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Could not share this frame.');
     }
   };

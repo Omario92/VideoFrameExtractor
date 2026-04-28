@@ -132,7 +132,7 @@ export default function VideoPlayerScreen() {
       const step = 1 / 30; // one frame at 30fps
       player.seekBy(direction === 'forward' ? step : -step);
     },
-    [player, currentTime, durationSeconds]
+    [player]
   );
 
   const handleFilmstripSelect = useCallback(
@@ -176,7 +176,7 @@ export default function VideoPlayerScreen() {
       } else {
         Alert.alert('Error', 'Could not extract frame to save.');
       }
-    } catch (_e) {
+    } catch {
       Alert.alert('Error', 'Failed to save frame.');
     } finally {
       setIsSaving(false);
@@ -203,7 +203,7 @@ export default function VideoPlayerScreen() {
       } else {
         Alert.alert('Error', 'Could not extract frame at this position.');
       }
-    } catch (_e) {
+    } catch {
       Alert.alert('Error', 'Frame extraction failed.');
     } finally {
       setIsExtracting(false);

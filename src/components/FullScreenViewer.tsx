@@ -50,7 +50,7 @@ export function FullScreenViewer({ visible, frames, initialIndex, onClose }: Ful
         if (flatListRef.current && initialIndex >= 0 && initialIndex < frames.length) {
           try {
             flatListRef.current.scrollToIndex({ index: initialIndex, animated: false });
-          } catch (_e) {}
+          } catch {}
         }
       }, 50);
     }
@@ -80,7 +80,7 @@ export function FullScreenViewer({ visible, frames, initialIndex, onClose }: Ful
       }
       await MediaLibrary.saveToLibraryAsync(frame.uri);
       Alert.alert('Success', 'Frame saved to gallery!');
-    } catch (_e) {
+    } catch {
       Alert.alert('Error', 'Failed to save frame.');
     } finally {
       setIsSaving(false);
@@ -98,7 +98,7 @@ export function FullScreenViewer({ visible, frames, initialIndex, onClose }: Ful
           dialogTitle: 'Share Frame',
         });
       }
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Could not share this frame.');
     }
   };
